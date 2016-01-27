@@ -10,6 +10,12 @@
 # maximum number of photos processed (be careful to avoid timeout)
 $maxPhoto = 4;
 
+# FROM LYCHEE
+# Size of the medium-photo
+# When changing these values,
+# also change the size detection in the front-end
+$newWidth	= 1920;
+$newHeight	= 1080;
 
 
 ###
@@ -69,12 +75,13 @@ if ((isset($_SESSION['login'])&&$_SESSION['login']===true)&&
 		# Size of the medium-photo
 		# When changing these values,
 		# also change the size detection in the front-end
-		$newWidth	= 1920;
-		$newHeight	= 1080;
+		global $newWidth;
+		global $newHeight;
 		# Check permissions
 		if (hasPermissions(LYCHEE_UPLOADS_MEDIUM)===false) {
 			# Permissions are missing
 			$error = true;
+			echo 'Not enough persmission on the medium folder'."\n";
 		}
 		# Is photo big enough?
 		# Is medium activated?
@@ -94,6 +101,8 @@ if ((isset($_SESSION['login'])&&$_SESSION['login']===true)&&
 			catch (ImagickException $err) {
 				Log::notice($database, __METHOD__, __LINE__, 'Could not save medium-photo: ' . $err->getMessage());
 				$error = true;
+				echo 'Imagick Exception:'."\n";
+				var_dump($e);
 			}
 			$medium->clear();
 			$medium->destroy();
@@ -113,9 +122,10 @@ if ((isset($_SESSION['login'])&&$_SESSION['login']===true)&&
 		# Functions returns the list of photos 
 		
 		global $database;	
-	
+		global $newWidth;
+		global $newHeight;	
 		# Get photos that do not have a medium size photo
-		$query	= Database::prepare($database, "SELECT id, width, height, url, medium FROM ? WHERE medium=0", array(LYCHEE_TABLE_PHOTOS));
+		$query	= Database::prepare($database, "SELECT id, width, height, url, medium FROM ? WHERE medium=0 AND (width >= ? OR height >= ?)", array(LYCHEE_TABLE_PHOTOS, $newWidth, $newHeight));
 		$photos	= $database->query($query);
 
 		$data = array();
@@ -145,7 +155,7 @@ if ((isset($_SESSION['login'])&&$_SESSION['login']===true)&&
 			echo 'success: '.$photo['id']. ' '.$photo['filename'] . "\n";
 		}
 		else {
-			echo 'error:   '.$photo['id'] . ' '.$photo['filename'] . "\n";
+			 exit('error:   '.$photo['id'] . ' '.$photo['filename']);
 		}
 		$maxPhoto -= 1;
 		if($maxPhoto == 0 || count($photos) - (4 - $maxPhoto) == 0) {
