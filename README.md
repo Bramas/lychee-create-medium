@@ -17,6 +17,6 @@ Go to your plugins folder, download the plugins:
 git clone https://github.com/Bramas/lychee-create-medium.git
 ```
 
-then visite (while you are logged in) the index page of the plugin: <YOUR LYCHEE WEBSITE>/plugins/create-medium/index.php
+then visite (while you are logged in) the index page of the plugin: `<YOUR LYCHEE WEBSITE>/plugins/create-medium/index.php`
 Then wait untill all the photos are processed.
 
