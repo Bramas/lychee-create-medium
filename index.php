@@ -5,6 +5,13 @@
 # @copyright	2016 by Quentin Bramas
 # @description	This file creates the missing medium photos.
 
+
+
+# maximum number of photos processed (be careful to avoid timeout)
+$maxPhoto = 4;
+
+
+
 ###
 # Location
 $lychee = __DIR__ . '/../../';
@@ -44,6 +51,7 @@ session_start();
 if ((isset($_SESSION['login'])&&$_SESSION['login']===true)&&
 	(isset($_SESSION['identifier'])&&$_SESSION['identifier']===$settings['identifier'])) {
 	
+	# Function taken from Lychee Photo Module
 	function createMedium($url, $filename, $width, $height) {
 		# Function creates a smaller version of a photo when its size is bigger than a preset size
 		# Excepts the following:
@@ -102,15 +110,11 @@ if ((isset($_SESSION['login'])&&$_SESSION['login']===true)&&
 	}
 
 	function getAllPhotos() {
-		# Functions returns data of a photo
-		# Excepts the following:
-		# (string) $albumID = Album which is currently visible to the user
-		# Returns the following:
-		# (array) $photo
+		# Functions returns the list of photos 
 		
 		global $database;	
 	
-		# Get photo
+		# Get photos that do not have a medium size photo
 		$query	= Database::prepare($database, "SELECT id, width, height, url, medium FROM ? WHERE medium=0", array(LYCHEE_TABLE_PHOTOS));
 		$photos	= $database->query($query);
 
@@ -130,7 +134,10 @@ if ((isset($_SESSION['login'])&&$_SESSION['login']===true)&&
 	if(empty($photos)) {
 		exit('done :)');
 	}
-	$maxPhoto = 4;
+	
+	# for each photo we create the medium size photo
+	# when reached the maximum number of photo, we reload the page
+
 	foreach($photos as $photo) {
 		if(createMedium($photo['url'], $photo['filename'], $photo['width'], $photo['height'])) { 
 			$query  = Database::prepare($database, "UPDATE ? SET medium=1 WHERE id=?", array(LYCHEE_TABLE_PHOTOS, $photo['id']));
