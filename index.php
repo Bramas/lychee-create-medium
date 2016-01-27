@@ -125,7 +125,7 @@ if ((isset($_SESSION['login'])&&$_SESSION['login']===true)&&
 		global $newWidth;
 		global $newHeight;	
 		# Get photos that do not have a medium size photo
-		$query	= Database::prepare($database, "SELECT id, width, height, url, medium FROM ? WHERE medium=0 AND (width >= ? OR height >= ?)", array(LYCHEE_TABLE_PHOTOS, $newWidth, $newHeight));
+		$query	= Database::prepare($database, "SELECT id, width, height, url, medium FROM ? WHERE medium=0 AND (width > ? OR height > ?)", array(LYCHEE_TABLE_PHOTOS, $newWidth, $newHeight));
 		$photos	= $database->query($query);
 
 		$data = array();
