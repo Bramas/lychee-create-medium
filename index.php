@@ -18,16 +18,21 @@ $newWidth	= 1920;
 $newHeight	= 1080;
 
 
-###
-# Location
+use Mysqli;
+use Lychee\Modules\Database;
+use Lychee\Modules\Settings;
+
 $lychee = __DIR__ . '/../../';
 $startTime = microtime(true);
-# Load requirements
+
 require($lychee . 'php/define.php');
 require($lychee . 'php/autoload.php');
-require($lychee . 'php/modules/misc.php');
+require($lychee . 'php/helpers/hasPermissions.php');
 
-# Set content
+// Start the session
+session_start();
+
+// Set content
 header('content-type: text/plain');
 
 # Load config
@@ -84,11 +89,9 @@ if ((isset($_SESSION['login'])&&$_SESSION['login']===true)&&
 			echo 'Not enough persmission on the medium folder'."\n";
 		}
 		# Is photo big enough?
-		# Is medium activated?
 		# Is Imagick installed and activated?
 		if (($error===false)&&
 			($width>$newWidth||$height>$newHeight)&&
-			($settings['medium']==='1')&&
 			(extension_loaded('imagick')&&$settings['imagick']==='1')) {
 			$newUrl = LYCHEE_UPLOADS_MEDIUM . $filename;
 			# Read image
@@ -108,7 +111,6 @@ if ((isset($_SESSION['login'])&&$_SESSION['login']===true)&&
 			$medium->destroy();
 		} else {
 			# Photo too small or
-			# Medium is deactivated or
 			# Imagick not installed
 			$error = true;
 		}
@@ -119,14 +121,13 @@ if ((isset($_SESSION['login'])&&$_SESSION['login']===true)&&
 	}
 
 	function getAllPhotos() {
-		# Functions returns the list of photos 
-		
-		global $database;	
+		# Functions returns the list of photos
+
 		global $newWidth;
-		global $newHeight;	
+		global $newHeight;
 		# Get photos that do not have a medium size photo
-		$query	= Database::prepare($database, "SELECT id, width, height, url, medium FROM ? WHERE medium=0 AND (width > ? OR height > ?)", array(LYCHEE_TABLE_PHOTOS, $newWidth, $newHeight));
-		$photos	= $database->query($query);
+		$query	= Database::prepare(Database::get(), "SELECT id, width, height, url, medium FROM ? WHERE medium=0 AND (width > ? OR height > ?)", array(LYCHEE_TABLE_PHOTOS, $newWidth, $newHeight));
+		$photos	= Database::get()->query($query);
 
 		$data = array();
 		
@@ -149,9 +150,9 @@ if ((isset($_SESSION['login'])&&$_SESSION['login']===true)&&
 	# when reached the maximum number of photo, we reload the page
 
 	foreach($photos as $photo) {
-		if(createMedium($photo['url'], $photo['filename'], $photo['width'], $photo['height'])) { 
-			$query  = Database::prepare($database, "UPDATE ? SET medium=1 WHERE id=?", array(LYCHEE_TABLE_PHOTOS, $photo['id']));
-			$result	= $database->query($query);
+		if(createMedium($photo['url'], $photo['filename'], $photo['width'], $photo['height'])) {
+			$query  = Database::prepare(Database::get(), "UPDATE ? SET medium=1 WHERE id=?", array(LYCHEE_TABLE_PHOTOS, $photo['id']));
+			$result	= Database::get()->query($query);
 			echo 'success: '.$photo['id']. ' '.$photo['filename'] . "\n";
 		}
 		else {
