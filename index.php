@@ -29,32 +29,18 @@ require($lychee . 'php/define.php');
 require($lychee . 'php/autoload.php');
 require($lychee . 'php/helpers/hasPermissions.php');
 
-// Start the session
-session_start();
-
-// Set content
+# Set content
 header('content-type: text/plain');
 
 # Load config
 if (!file_exists(LYCHEE_CONFIG_FILE)) exit('Error 001: Configuration not found. Please install Lychee first.');
 require(LYCHEE_CONFIG_FILE);
 
-# Define the table prefix
-if (!isset($dbTablePrefix)) $dbTablePrefix = '';
-defineTablePrefix($dbTablePrefix);
-
 # Declare
 $result = '';
 
-# Database
-$database = new mysqli($dbHost, $dbUser, $dbPassword, $dbName);
-if (mysqli_connect_errno()!=0) {
-	echo 'Error 100: ' . mysqli_connect_errno() . ': ' . mysqli_connect_error() . '' . PHP_EOL;
-	exit();
-}
-
 # Load settings
-$settings = new Settings($database);
+$settings = new Settings();
 $settings = $settings->get();
 
 # Ensure that user is logged in
