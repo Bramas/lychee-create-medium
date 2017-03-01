@@ -14,7 +14,7 @@ With this plugins you will be able to create medium size photos for all the phot
 
 Go to your plugins folder, download the plugins:
 ```
-git clone https://github.com/Bramas/lychee-create-medium.git
+git clone https://github.com/Bramas/lychee-create-medium.git create-medium
 ```
 
 then visite (while you are logged in) the index page of the plugin: `<YOUR LYCHEE WEBSITE>/plugins/create-medium/index.php`
