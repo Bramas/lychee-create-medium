@@ -16,6 +16,7 @@ $maxPhoto = 4;
 # also change the size detection in the front-end
 $newWidth	= 1920;
 $newHeight	= 1080;
+$quality        = 98;
 
 
 use Mysqli;
@@ -49,7 +50,7 @@ if ((isset($_SESSION['login'])&&$_SESSION['login']===true)&&
 	(isset($_SESSION['identifier'])&&$_SESSION['identifier']===$settings['identifier'])) {
 	
 	# Function taken from Lychee Photo Module
-	function createMedium($url, $filename, $width, $height) {
+	function createMedium($url, $filename, $type, $width, $height) {
 		# Function creates a smaller version of a photo when its size is bigger than a preset size
 		# Excepts the following:
 		# (string) $url = Path to the photo-file
@@ -76,30 +77,55 @@ if ((isset($_SESSION['login'])&&$_SESSION['login']===true)&&
 		}
 		# Is photo big enough?
 		# Is Imagick installed and activated?
-		if (($error===false)&&
-			($width>$newWidth||$height>$newHeight)&&
-			(extension_loaded('imagick')&&$settings['imagick']==='1')) {
-			$newUrl = LYCHEE_UPLOADS_MEDIUM . $filename;
-			# Read image
-			$medium = new Imagick();
-			$medium->readImage(LYCHEE.$url);
-			# Adjust image
-			$medium->scaleImage($newWidth, $newHeight, true);
-			# Save image
-			try { $medium->writeImage($newUrl); }
-			catch (ImagickException $err) {
-				Log::notice($database, __METHOD__, __LINE__, 'Could not save medium-photo: ' . $err->getMessage());
-				$error = true;
-				echo 'Imagick Exception:'."\n";
-				var_dump($e);
-			}
-			$medium->clear();
-			$medium->destroy();
+		if (($error===false)&&($width>$newWidth||$height>$newHeight)){
+			if((extension_loaded('imagick')&&$settings['imagick']==='1')) {
+				$newUrl = LYCHEE_UPLOADS_MEDIUM . $filename;
+				# Read image
+				$medium = new Imagick();
+				$medium->readImage(LYCHEE.$url);
+				# Adjust image
+				$medium->scaleImage($newWidth, $newHeight, true);
+				# Save image
+				try { $medium->writeImage($newUrl); }
+				catch (ImagickException $err) {
+					Log::notice($database, __METHOD__, __LINE__, 'Could not save medium-photo: ' . $err->getMessage());
+					$error = true;
+					echo 'Imagick Exception:'."\n";
+					var_dump($e);
+				}
+				$medium->clear();
+				$medium->destroy();
+                	} else {
+				$newUrl = LYCHEE_UPLOADS_MEDIUM . $filename;
+
+				# Read image
+                                $newHeight = $newWidth/($width/$height);
+		                $medium    = imagecreatetruecolor($newWidth, $newHeight);
+
+				// Create new image
+				switch($type) {
+					case 'image/jpeg': $sourceImg = imagecreatefromjpeg(LYCHEE.$url); break;
+					case 'image/png':  $sourceImg = imagecreatefrompng(LYCHEE.$url); break;
+					case 'image/gif':  $sourceImg = imagecreatefromgif(LYCHEE.$url); break;
+					default:           Log::notice($database, __METHOD__, __LINE__, 'Type of photo is not supported: ' . $filename . ' of type ' . $type);
+                                                           return false;
+                                                           break;
+				}
+
+				// Create retina thumb
+				imagecopyresampled($medium, $sourceImg, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+				imagejpeg($medium, $newUrl, $quality);
+				imagedestroy($medium);
+
+				// Free memory
+				imagedestroy($sourceImg);
+                        }
 		} else {
 			# Photo too small or
 			# Imagick not installed
 			$error = true;
 		}
+
 		if($error === true) {
 			return false;
 		}
@@ -112,7 +138,7 @@ if ((isset($_SESSION['login'])&&$_SESSION['login']===true)&&
 		global $newWidth;
 		global $newHeight;
 		# Get photos that do not have a medium size photo
-		$query	= Database::prepare(Database::get(), "SELECT id, width, height, url, medium FROM ? WHERE medium=0 AND (width > ? OR height > ?)", array(LYCHEE_TABLE_PHOTOS, $newWidth, $newHeight));
+		$query	= Database::prepare(Database::get(), "SELECT id, width, height, url, medium, type FROM ? WHERE medium=0 AND (width > ? OR height > ?)", array(LYCHEE_TABLE_PHOTOS, $newWidth, $newHeight));
 		$photos	= Database::get()->query($query);
 
 		$data = array();
@@ -136,7 +162,7 @@ if ((isset($_SESSION['login'])&&$_SESSION['login']===true)&&
 	# when reached the maximum number of photo, we reload the page
 
 	foreach($photos as $photo) {
-		if(createMedium($photo['url'], $photo['filename'], $photo['width'], $photo['height'])) {
+		if(createMedium($photo['url'], $photo['filename'], $photo['type'], $photo['width'], $photo['height'])) {
 			$query  = Database::prepare(Database::get(), "UPDATE ? SET medium=1 WHERE id=?", array(LYCHEE_TABLE_PHOTOS, $photo['id']));
 			$result	= Database::get()->query($query);
 			echo 'success: '.$photo['id']. ' '.$photo['filename'] . "\n";
