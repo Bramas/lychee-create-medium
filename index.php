@@ -69,6 +69,7 @@ if ((isset($_SESSION['login'])&&$_SESSION['login']===true)&&
 		# also change the size detection in the front-end
 		global $newWidth;
 		global $newHeight;
+		global $quality;
 		# Check permissions
 		if (hasPermissions(LYCHEE_UPLOADS_MEDIUM)===false) {
 			# Permissions are missing
